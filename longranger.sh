@@ -43,7 +43,7 @@ for i in $directories; do
         module load mugqic/longranger
         longranger wgs --id $i --fastqs ${fastq}/${i} --vcmode freebayes --reference $genome --localcores 12 --localmem 80">${bash}/${i}_longranger.sh;
 
-        sbatch -A $RAP_ID --mail-type=END,FAIL --mail-user=$JOB_MAIL -J ${i}_longranger --time=72:00:0 --mem=80G -N 1 -n 12 ${bash}/${i}_longranger.sh;
+        sbatch -A $SLURM_ACCOUNT --mail-type=END,FAIL --mail-user=$JOB_MAIL -J ${i}_longranger --time=72:00:0 --mem=80G -N 1 -n 12 ${bash}/${i}_longranger.sh;
 
         sleep 1;
 done
