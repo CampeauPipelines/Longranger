@@ -1,7 +1,7 @@
 #!/bin/bash/
 
 ###########################
-# This is a pipeline for longranger wgs with hg19 reference genome on Graham CC server
+# This is a pipeline for longranger wgs on Graham CC server
 # Needs to be started from a directory containing fastqs demultiplexed with bcl2fastq
 ###########################
 
