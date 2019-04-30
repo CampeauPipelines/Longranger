@@ -5,49 +5,44 @@
 # Needs to be started from a directory containing fastqs demultiplexed with bcl2fastq
 ############################
 
-homedir=${pwd}
-fastqdir=$1
-cd $fastqdir
+homedir=$1
+fastqdir=$2
+index=$3
 
-names=$(ls $fastqdir | awk -F "_R1" '{print $1}')
-
-mkdir fastq_files
-
-for i in $names; do
-        mkdir fastq_files/$i;
-        echo "name is ${i}";
-        files=$(ls *.fastq.gz | grep -e "$i");
-
-        for j in $files; do
-                echo "file is ${j}";
-                mv $j fastq/$i;
-                echo "moving ${j} to ${i}";
-
-        done
-
-done
-
-cd $homedir
 
 mkdir bash_files
 
-directories=$(ls fastq_files)
 genome_dir=$MUGQIC_INSTALL_HOME/genomes/species
-genome=$(echo "$genome_dir/$(ls ${MUGQIC_INSTALL_HOME}/genomes/species/ | grep -e $2)")
+genomefirstdir=$(echo "$genome_dir/$(ls ${MUGQIC_INSTALL_HOME}/genomes/species/ | grep -e "$index")/genome/10xGenomics")
+genome=$(echo "$genomefirstdir/$(ls $genomefirstdir | grep -v -e "cellranger")")
 bash=bash_files
-fastq=${home}/fastq_files
 
-for i in $directories; do
-        echo $i;
-        echo "#!/bin/bash
-        cd $home
-        echo 'start date'
-        date
-        module load mugqic/longranger
-        longranger wgs --id $i --fastqs ${fastq}/${i} --vcmode freebayes --reference $genome --localcores 12 --localmem 80">${bash}/${i}_longranger.sh;
+for i in $(ls $fastqdir | awk -F "_R[0-9]" '{print $1}' | uniq); do
+        echo "creating bash file for sample ${i}";
+       	cd $fastqdir
+       	mkdir $i
+	mv `find $fastqdir -maxdepth 1 -type f | grep -e $i` $i
+	
+	cd $homedir
+	echo "#!/bin/bash
+#SBATCH --time=72:00:00
+#SBATCH --job-name=longranger_${i}
+#SBATCH --output=%x-%j.out
+#SBATCH --error %x-%j.err
+#SBATCH --ntasks=12
+#SBATCH --mem-per-cpu=6G
+#SBATCH --mail-user=$JOB_MAIL
+#SBATCH --mail-type=END, FAIL
+#SBATCH --A=$SLURM_ACCOUNT
+	
+cd $homedir
+echo 'start date'
+date
+module load mugqic/longranger
+longranger wgs --id $i --fastqs ${fastqdir}${i} --vcmode freebayes --reference $genome --localcores 12 --localmem 72">${bash}/${i}_longranger.sh;
 
-        sbatch -A $SLURM_ACCOUNT --mail-type=END,FAIL --mail-user=$JOB_MAIL -J ${i}_longranger --time=72:00:0 --mem=80G -N 1 -n 12 ${bash}/${i}_longranger.sh;
+sbatch ${bash}/${i}_longranger.sh;
 
-        sleep 1;
+sleep 1;
 done
 
