@@ -1,20 +1,22 @@
 #!/bin/bash/
 
-###########################
+############################
 # This is a pipeline for longranger wgs on Graham CC server
 # Needs to be started from a directory containing fastqs demultiplexed with bcl2fastq
-###########################
+############################
 
-directory=$1
+homedir=${pwd}
+fastqdir=$1
+cd $fastqdir
 
-names=$( ls $directory | grep -e "bam" | cut -d'_' -f1 | uniq)
+names=$(ls $fastqdir | awk -F "_R1" '{print $1}')
 
-mkdir fastq
+mkdir fastq_files
 
 for i in $names; do
-        mkdir fastq/$i;
+        mkdir fastq_files/$i;
         echo "name is ${i}";
-        files=$( ls *.fastq.gz | grep -e "$i");
+        files=$(ls *.fastq.gz | grep -e "$i");
 
         for j in $files; do
                 echo "file is ${j}";
@@ -25,12 +27,13 @@ for i in $names; do
 
 done
 
+cd $homedir
+
 mkdir bash_files
 
 directories=$(ls fastq_files)
-home=$(pwd)
 genome_dir=$MUGQIC_INSTALL_HOME/genomes/species
-genome=echo "$genome_dir/$(ls ${MUGQIC_INSTALL_HOME}/genomes/species/ | grep -e $2)"
+genome=$(echo "$genome_dir/$(ls ${MUGQIC_INSTALL_HOME}/genomes/species/ | grep -e $2)")
 bash=bash_files
 fastq=${home}/fastq_files
 
